@@ -234,15 +234,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   variants:
   - keywords:
-    - bla
-    - blo
+    - DIRECTIONAL
+    - POINT
   - keywords:
-    - te
-    - ts
-    - tr
+    - LIGHTMAP_ON
+    - LIGHTMAP_SH
+    - null
   - keywords:
-    - ds
-    - sd
+    - FOG_LINEAR
+    - null
 --- !u!4 &1562074843
 Transform:
   m_ObjectHideFlags: 0
