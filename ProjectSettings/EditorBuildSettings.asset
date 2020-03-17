@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/OfflineRankingTable/Example/ExampleRankingTable.unity
+    guid: c8f0348d0c0e7be458bb9d712783e5ae
   m_configObjects: {}
