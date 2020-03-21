@@ -5,9 +5,6 @@ using UnityEngine;
 [System.Serializable]
 public class SaveToFile
 {
-    public List<int> livingTargetPositions = new List<int>();
-    public List<int> livingTargetsTypes = new List<int>();
-
-    public int hits = 0;
-    public int shots = 0;
+    public List<int> allScores = new List<int>();
+    public List<string> allInitials = new List<string>();
 }

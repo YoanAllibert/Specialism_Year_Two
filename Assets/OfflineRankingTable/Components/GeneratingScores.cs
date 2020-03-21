@@ -4,24 +4,25 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using UnityEngine;
+using System.Linq;
 
 public class GeneratingScores : MonoBehaviour
 {
-    [SerializeField] private List<string> Initials; //List of base Initials
-    [SerializeField] private List<int> averageScore; //One entry per level
-    [SerializeField] private List<int> standardDeviation; //One entry per level
+    [SerializeField] private List<string> initials; //List of base Initials
 
-    [SerializeField] private List<int> savedScores; //Full list of saved scores
+    private List<int> averageScore; //One entry per level
+    private List<int> standardDeviation; //One entry per level
+
+    public List<int> savedScores; //Full list of saved scores (300)
+    public List<string> savedNames; //Full list of saved names (300)
 
     void Start()
     {
-        int i = 10/5;
-        Debug.Log(Mathf.FloorToInt(i));
-
-        if ((File.Exists(Application.persistentDataPath + "/saves/RankingTable.save"))) //First time running, we generate new lists
+        if (!(File.Exists(Application.persistentDataPath + "/saves/RankingTable.save"))) //First time running, we generate new lists
         {
             PopulateLists();
             GenerateScores();
+            GenerateNames();
             OrderingScores();
             SaveGame();
         }
@@ -35,8 +36,8 @@ public class GeneratingScores : MonoBehaviour
     {
         for (int i = 0; i < 60; i++)
         {
-            averageScore.Add(UnityEngine.Random.Range(1000, 6000)); //Average scores
-            standardDeviation.Add(UnityEngine.Random.Range(200, 500)); //Generate a random standard deviation
+            averageScore.Add(UnityEngine.Random.Range(1000, 8000)); //Average scores
+            standardDeviation.Add(UnityEngine.Random.Range(100, 600)); //Generate a random standard deviation
         }
     }
 
@@ -55,106 +56,100 @@ public class GeneratingScores : MonoBehaviour
         }
     }
 
-    private void OrderingScores()
+    private void GenerateNames()
     {
-        //create buffer list:
-        List<int> bufferScore = new List<int>();
+        for (int i = 0; i < 60 * 5; i++) //60 levels, saving random initials for 5 scores each
+        {
+            savedNames.Add(initials[UnityEngine.Random.Range(0, initials.Count)]); 
+        }
+    }
 
+    public void OrderingScores()
+    {
         //Access each level:
         for (int i = 0; i < 60; i++)
         {
-            //populate buffer list
+            //Create buffer dictionary
+            Dictionary<int, int> buffer = new Dictionary<int, int>();
+            List<string> bufferNames = new List<string>();
+
+            //populate buffer dictionary
             for (int j = 0; j < 5; j++)
             {
-                int idOfScore = (i * 5) + j; //calculate index of score 
-                bufferScore.Add(savedScores[idOfScore]);
+                int index = (i * 5) + j; //calculate index of entry
+                buffer.Add(j, savedScores[index]);
+                bufferNames.Add(savedNames[index]);
             }
 
-            bufferScore.Sort(); //Sorting score in ascending order
-            bufferScore.Reverse(); //sorting in descending order
+            //Order scores in descending order using Linq
+            var scores = from pair in buffer
+                    orderby pair.Value descending
+                    select pair;
 
-            //Change Saved Score for new order
-            for (int j = 0; j < 5; j++)
+            int increment = 0;
+            foreach (KeyValuePair<int, int> pair in scores)
             {
-                int idOfScore = (i * 5) + j; //calculate index of score 
-                savedScores[idOfScore] = bufferScore[j];
+                savedScores[(i * 5) + increment] = pair.Value;
+                savedNames[(i * 5) + increment] = bufferNames[pair.Key];
+                increment++;
             }
 
-            bufferScore.Clear(); //Clear buffer for next level
+            buffer.Clear(); //Clear buffer for next level
+            bufferNames.Clear();
         }
     }
 
     private SaveToFile CreateSaveGameObject()
     {
         SaveToFile save = new SaveToFile();
-        int i = 0;
-        foreach (int score in averageScore)
-        {
-            save.livingTargetPositions.Add(score);
-            save.livingTargetsTypes.Add(score);
-            i++;
-        }
 
-        save.hits = 2;
-        save.shots = 4;
+        foreach (int score in savedScores)
+        {
+            save.allScores.Add(score);
+        }
+        foreach (string name in savedNames)
+        {
+            save.allInitials.Add(name);
+        }
 
         return save;
     }
 
     public void SaveGame()
     {
-        // 1
         SaveToFile save = CreateSaveGameObject();
 
-        // 2
         BinaryFormatter bf = new BinaryFormatter();
         Directory.CreateDirectory(Application.persistentDataPath + "/saves");
         FileStream file = File.Create(Application.persistentDataPath + "/saves/RankingTable.save");
         bf.Serialize(file, save);
         file.Close();
 
-        // 3
         Debug.Log("Game Saved");
     }
 
     public void LoadGame()
     {
-        // 1
-        if (File.Exists(Application.persistentDataPath + "/saves/RankingTable.save"))
+        if (File.Exists(Application.persistentDataPath + "/saves/RankingTable.save")) //If we have a saved file
         {
-            /* ClearBullets();
-            ClearRobots();
-            RefreshRobots(); */
+            savedScores.Clear();
+            savedNames.Clear();
 
-            // 2
             BinaryFormatter bf = new BinaryFormatter();
+
             FileStream file = File.Open(Application.persistentDataPath + "/saves/RankingTable.save", FileMode.Open);
             SaveToFile save = (SaveToFile)bf.Deserialize(file);
             file.Close();
 
-            // 3
-            for (int i = 0; i < save.livingTargetPositions.Count; i++)
+            for (int i = 0; i < save.allScores.Count; i++) 
             {
-                int position = save.livingTargetPositions[i];
-                //Target target = targets[position].GetComponent<Target>();
-                //target.ActivateRobot((RobotTypes)save.livingTargetsTypes[i]);
-                //target.GetComponent<Target>().ResetDeathTimer();
+                savedScores.Add(save.allScores[i]);
+                savedNames.Add(save.allInitials[i]);
             }
-
-            // 4
-            //shotsText.text = "Shots: " + save.shots;
-            //hitsText.text = "Hits: " + save.hits;
-            int shots = save.shots;
-            int hits = save.hits;
-
-            Debug.Log("shots" +shots);
-            Debug.Log("hits" +hits);
-
-            //Unpause();
         }
         else
         {
-            Debug.Log("No game saved!");
+            Debug.Log("No Save to Load");
         }
     }
 }
