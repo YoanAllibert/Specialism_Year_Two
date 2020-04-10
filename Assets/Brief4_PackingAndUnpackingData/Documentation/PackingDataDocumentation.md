@@ -21,7 +21,7 @@ Each of the objects (Players, Pick-Ups, Missiles) informations will pack it's ow
 
 `Bit Arrays` are actually a series of booleans, packed as bits. False is a value of 0, True is a value of 1. For ease of readings, we consider entries by their bit value rather than their booleans.
 
-## Data size
+## *Data size*
 
 To reduce the number of bits sent, we need to know the size of each types:
 
@@ -39,6 +39,8 @@ By default, Vector2 uses two `Integer`, so 64 bits. We will need to transform th
 For the **Position**, we can get away with using two `short`. To get more precision, we can consider dividing the value by 100 once it has been unpacked. This would make a range for each short (Transformed into floats) of -327.68 to 327.67. Packed in 32 bits.
 
 Similarly, for the **Velocity**, we can simply use two `byte`, which when divided by 10, will give us a float with enough range for velocity. Packed in 16 bits.
+
+Once all the *informations* needed have been converted to a `BitArray`, we add them next to each other, making sure we keep the same order. First 8 bits for **Identification**, 9th bit for **state**, next 32 bits fos **Position** if needed (bit 10 to 41), next 16 bits for **Velocity** if needed (bit 42 to 57).
 
 ## *Data limit calculation*
 
